@@ -5,7 +5,8 @@ target 'MIST-Demo' do
   
   pod 'SDWebImage'
   pod 'IDMPhotoBrowser'
-  pod 'MIST', :path => '../'
+  pod 'MIST', :path => '../MIST.podspec'
+  pod 'VZFlexLayout', :path => '../VZFlexLayout.podspec'
   pod 'MISTDebug'
   pod 'VZInspector'
 
