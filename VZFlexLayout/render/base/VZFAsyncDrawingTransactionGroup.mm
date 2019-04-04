@@ -8,8 +8,7 @@
 
 #import "VZFAsyncDrawingTransactionGroup.h"
 #import "VZFAsyncDrawingTransaction.h"
-#import "VZFAsyncDrawingTransactionContainer.h"
-#import "VZFAsyncDrawingTransactionContainer+Private.h"
+#import "CALayer+AsyncTransactionContainer.h"
 #import "VZFMacros.h"
 
 

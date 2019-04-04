@@ -160,6 +160,12 @@
     
     if ([_operations count] == 0) {
         // Fast path: if a transaction was opened, but no operations were added, execute completion block synchronously.
+        // 是否应该回到_callbackQueue回调
+//        dispatch_async(_callbackQueue, ^{
+//            if (_completionBlock) {
+//                _completionBlock(self, NO);
+//            }
+//        });
         if (_completionBlock) {
             _completionBlock(self, NO);
         }

@@ -1,34 +1,29 @@
 //
-//  VZFAsyncDrawingTransactionContainer.m
+//  CALayer+AsyncTransactionContainer.m
 //  VZFlexLayout
 //
-//  Created by moxin on 16/9/19.
-//  Copyright © 2016年 Vizlab. All rights reserved.
+//  Created by chenzhengxu on 2019/4/4.
 //
 
-#import "VZFAsyncDrawingTransactionContainer.h"
-#import "VZFAsyncDrawingTransactionContainer+Private.h"
+#import "CALayer+AsyncTransactionContainer.h"
 #import "VZFAsyncDrawingTransaction.h"
 #import "VZFAsyncDrawingTransactionGroup.h"
 #import <objc/runtime.h>
-
-
 
 const static void* vz_asyncTransactionHashTable = &vz_asyncTransactionHashTable;
 const static void* vz_currentAsyncTransaction = &vz_currentAsyncTransaction;
 const static void* vz_isAsyncTransactionnContainer = &vz_isAsyncTransactionnContainer;
 
-
 @implementation CALayer (AsyncTransactionContainer)
 
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//asyncTransactions
 
-//isAsyncTransactionContainer
-- (void)setIsAsyncTransactionContainer:(BOOL)isAsyncTransactionContainer{
-    objc_setAssociatedObject(self, vz_isAsyncTransactionnContainer, @(isAsyncTransactionContainer), OBJC_ASSOCIATION_ASSIGN);
+- (void)setAsyncLayerTransactions:(NSHashTable *)asyncLayerTransactions{
+    objc_setAssociatedObject(self, vz_asyncTransactionHashTable, asyncLayerTransactions, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
-
-- (BOOL)isAsyncTransactionContainer{
-    return  [objc_getAssociatedObject(self, vz_isAsyncTransactionnContainer) boolValue];
+- (NSHashTable* )asyncLayerTransactions{
+    return objc_getAssociatedObject(self, vz_asyncTransactionHashTable);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -41,25 +36,6 @@ const static void* vz_isAsyncTransactionnContainer = &vz_isAsyncTransactionnCont
 - (VZFAsyncDrawingTransaction* )currentAsyncTransaction{
     return objc_getAssociatedObject(self, vz_currentAsyncTransaction);
 }
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//asyncTransactions
-
-- (void)setAsyncLayerTransactions:(NSHashTable *)asyncLayerTransactions{
-    objc_setAssociatedObject(self, vz_asyncTransactionHashTable, asyncLayerTransactions, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-}
-- (NSHashTable* )asyncLayerTransactions{
-    return objc_getAssociatedObject(self, vz_asyncTransactionHashTable);
-}
-
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//transaction container state
-- (void)setAsyncTransactionContainerState:(VZFAsyncTransactionContainerState)state{};
-- (VZFAsyncTransactionContainerState)asyncTransactionContainerState{
-      return ([self.asyncLayerTransactions count] == 0) ? kNoTransactions : kPendingTransaction;
-}
-
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //asyncTransaction
@@ -114,10 +90,13 @@ const static void* vz_isAsyncTransactionnContainer = &vz_isAsyncTransactionnCont
     return transaction;
 }
 
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//parentTransactionContainer
+
 - (void)setParentTransactionContainer:(CALayer *)parentTransactionContainer{};
 //getter @runtime
 - (CALayer* )parentTransactionContainer{
-
+    
     CALayer *containerLayer = self;
     while (containerLayer && !containerLayer.isAsyncTransactionContainer) {
         containerLayer = containerLayer.superlayer;
@@ -131,11 +110,28 @@ const static void* vz_isAsyncTransactionnContainer = &vz_isAsyncTransactionnCont
 - (void)vz_asyncTransactionContainerWillBeginTransaction:(VZFAsyncDrawingTransaction *)transaction{}
 - (void)vz_asyncTransactionContainerDidCompleteTransaction:(VZFAsyncDrawingTransaction *)transaction{}
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 #pragma mark - protocol methdos
 
-- (void)vz_cancelAsyncTransactions{
+//isAsyncTransactionContainer
+- (void)setIsAsyncTransactionContainer:(BOOL)isAsyncTransactionContainer{
+    objc_setAssociatedObject(self, vz_isAsyncTransactionnContainer, @(isAsyncTransactionContainer), OBJC_ASSOCIATION_ASSIGN);
+}
 
+- (BOOL)isAsyncTransactionContainer{
+    return  [objc_getAssociatedObject(self, vz_isAsyncTransactionnContainer) boolValue];
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//transaction container state
+- (void)setAsyncTransactionContainerState:(VZFAsyncTransactionContainerState)state{};
+- (VZFAsyncTransactionContainerState)asyncTransactionContainerState{
+    return ([self.asyncLayerTransactions count] == 0) ? kNoTransactions : kPendingTransaction;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+- (void)vz_cancelAsyncTransactions{
+    
     // If there was an open transaction, commit and clear the current transaction. Otherwise:
     // (1) The run loop observer will try to commit a canceled transaction which is not allowed
     // (2) We leave the canceled transaction attached to the layer, dooming future operations
@@ -146,17 +142,16 @@ const static void* vz_isAsyncTransactionnContainer = &vz_isAsyncTransactionnCont
     for (VZFAsyncDrawingTransaction *transaction in [self.asyncLayerTransactions copy]) {
         [transaction cancel];
     }
-
+    
 }
 
 - (void)vz_asyncTransactionContainerStateDidChange{
-
+    
     id delegate = self.delegate;
     if ([delegate respondsToSelector:@selector(vz_asyncTransactionContainerStateDidChange)]) {
         [delegate vz_asyncTransactionContainerStateDidChange];
     }
-
+    
 }
-
 
 @end

@@ -10,8 +10,7 @@
 #import "VZFMacros.h"
 #import "VZFUtils.h"
 #import "VZFAsyncDrawingTransaction.h"
-#import "VZFAsyncDrawingTransactionContainer.h"
-#import "VZFAsyncDrawingTransactionContainer+Private.h"
+#import "CALayer+AsyncTransactionContainer.h"
 #import <libkern/OSAtomic.h>
 #import <UIKit/UIKit.h>
 #import "VZFNodeInternal.h"
@@ -149,6 +148,10 @@
     
     
     CALayer* parentTransactionContainer = nil;
+
+    // 调用异步绘制
+//    renderSynchronously = NO;
+//    self.displayMode = kDisplayModeAsync;
     
     // 如果不是纯异步绘制
     if (!_needsAsyncDisplayOnly) {
@@ -222,6 +225,8 @@
     
     int32_t  displaySentinelValue = OSAtomicIncrement32(&_displaySentinel);
     CALayer* containerLayer = parentTransactionContainer?:self;
+    
+    // 返回绘制结果 应是CGImageRef类型
     vz_async_display_block_t displayBlock = [[self class] asyncDisplayBlockWithBounds:bounds
                                                                         contentsScale:self.contentsScale
                                                                                opaque:drawParameters.opaque
@@ -231,7 +236,7 @@
                                                                       drawingDelegate:self
                                                                        drawParameters:drawParameters];
     
-    
+    // 绘制结束 设置self.contents 利用cache缓存结果 renderer持有的node弱指针指向结果
     vz_async_completion_block_t completionBlock = ^(id<NSObject> value, BOOL cancelled){
     
         VZFAssertMainThread();
@@ -254,6 +259,9 @@
         [transaction addSyncDrawingOperation:displayBlock
                                        queue:[[self class]displayQueue]
                                   completion:completionBlock];
+//        [transaction addAsyncTransactionOperation:^(vz_async_transaction_operation_completion_block_t completionBlock) {
+//            completionBlock(displayBlock());
+//        } queue:[self.class displayQueue] completion:completionBlock];
     }
     
 }

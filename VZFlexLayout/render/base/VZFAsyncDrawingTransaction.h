@@ -9,7 +9,7 @@
 #import <Foundation/Foundation.h>
 
 
-//异步绘制block
+//绘制block
 typedef id<NSObject>(^vz_async_display_block_t)(void);
 //取消block
 typedef BOOL(^vz_async_iscancelled_block_t)(void);
@@ -76,11 +76,12 @@ typedef NS_ENUM(NSUInteger, VZFAsyncTransactionState) {
  @param completion The completion block that will be executed with the output of the execution block when all of the
  operations in the transaction are completed. Executed and released on callbackQueue.
  */
+// block为同步调用绘制代码
 - (void)addSyncDrawingOperation:(vz_async_display_block_t)block
                            queue:(dispatch_queue_t)queue
                       completion:(vz_async_completion_block_t)completion;
 
-
+// block内可异步调用绘制代码
 - (void)addAsyncTransactionOperation:(vz_async_transaction_operation_block_t)block
                                queue:(dispatch_queue_t)queue
                           completion:(vz_async_completion_block_t)completion;
